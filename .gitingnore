@@ -1,0 +1,4 @@
+data/raw/*
+*.duckdb
+*.duckdb.wal
+.ipynb_checkpoints/
