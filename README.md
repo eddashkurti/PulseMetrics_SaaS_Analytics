@@ -12,6 +12,8 @@ An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, c
 - `sql/04_retention_analysis.sql` — cohort retention and segment-retention views.
 - `dashboard/app.py` — interactive Streamlit dashboard.
 - `docs/metric_definitions.md` — metric definitions and analytical assumptions.
+- `docs/entity_relationships.md` — curated model grains and relationships.
+- `docs/powerbi_measures.md` — Power BI measure specification.
 - `reports/` — reserved for exported analysis and dashboard documentation.
 - `powerbi/` — Power BI model guidance and future `.pbix`/`.pbit` artifacts.
 
@@ -50,6 +52,8 @@ py -3.13 -m streamlit run dashboard/app.py
 The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue. The `sql/03_analytics_model.sql` and `sql/04_retention_analysis.sql` views provide the clean source layer for Power BI if a `.pbix` report is added later.
 
 GitHub Actions runs Python compilation and the data-quality suite on every push and pull request.
+
+The quality suite reports 23 known source date anomalies (`ended_on` before `started_on`) as warnings. Raw source files are preserved unchanged; curated model invariants must pass with zero failures.
 
 ## Data quality
 
