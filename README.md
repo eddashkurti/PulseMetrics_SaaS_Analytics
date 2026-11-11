@@ -53,6 +53,8 @@ py -3.13 -m streamlit run dashboard/app.py
 
 The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue. The `sql/03_analytics_model.sql` and `sql/04_retention_analysis.sql` views provide the clean source layer for the committed `pulsemetrics.pbix` Power BI report.
 
+See the rendered dashboard evidence in [`reports/README.md`](reports/README.md) and the full narrative in [`reports/portfolio_case_study.md`](reports/portfolio_case_study.md).
+
 GitHub Actions runs Python compilation, the data-quality suite, and analytical-model regression tests on every push and pull request.
 
 The quality suite reports 23 known source date anomalies (`ended_on` before `started_on`) as warnings. Raw source files are preserved unchanged; curated model invariants must pass with zero failures.

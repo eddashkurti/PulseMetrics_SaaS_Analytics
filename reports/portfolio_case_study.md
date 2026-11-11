@@ -4,6 +4,10 @@
 
 PulseMetrics is an end-to-end B2B SaaS revenue-operations workspace. It turns subscription, invoice, organization, user, plan, and product-event data into a decision layer for leadership, finance, customer success, and product teams.
 
+![Executive scorecard](screenshots/streamlit-executive-scorecard.jpg)
+
+![Retention and customer health](screenshots/streamlit-retention-health.jpg)
+
 The project answers four practical questions:
 
 1. Is recurring revenue growing, and which plan tiers drive it?
