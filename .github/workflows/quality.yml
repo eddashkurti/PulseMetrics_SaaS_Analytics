@@ -18,3 +18,5 @@ jobs:
         run: python -m py_compile dashboard/app.py scripts/*.py
       - name: Run data quality checks
         run: python scripts/run_quality_checks.py
+      - name: Run model regression tests
+        run: python tests/test_model.py

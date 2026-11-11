@@ -12,3 +12,14 @@ The repository ships the interactive dashboard as Streamlit and the completed Po
 - `segment_retention`
 
 The report uses these views as its analytical source layer, relates organizations and plans through their keys, and follows the definitions in `docs/metric_definitions.md` as the measure specification. The Streamlit dashboard remains the reproducible local experience, while `pulsemetrics.pbix` is the Power BI presentation deliverable.
+
+## Report review checklist
+
+- Executive scorecard: revenue, active accounts, churned subscriptions, active organizations, and seats.
+- Revenue analysis: monthly trajectory and plan-tier mix.
+- Retention analysis: churn reasons and signup-cohort retention.
+- Adoption analysis: active organizations by product event.
+- Customer success: health segmentation and account-priority queue.
+- Drill-through: organization-level revenue, usage, subscription, and health context.
+
+To refresh the model, rebuild the local DuckDB database from the Parquet inputs, confirm the quality checks pass, and refresh the Power BI source queries. The `.pbix` file is versioned for portfolio review; it is not a substitute for the reproducible SQL and Python model.
