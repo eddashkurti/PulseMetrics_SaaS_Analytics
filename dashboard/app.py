@@ -26,6 +26,8 @@ def get_connection():
         con.execute(f"CREATE OR REPLACE VIEW {table} AS SELECT * FROM read_parquet('{path}')")
     model_path = ROOT / "sql" / "03_analytics_model.sql"
     con.execute(model_path.read_text())
+    retention_path = ROOT / "sql" / "04_retention_analysis.sql"
+    con.execute(retention_path.read_text())
     return con
 
 con = get_connection()
@@ -130,6 +132,25 @@ with left:
     """, [*selected_industries, *selected_tiers, start, end])
     fig = px.bar(churn, x="month", y="subscriptions", color="cancel_reason", barmode="stack", title="Churn by cancellation reason")
     fig.update_layout(template="plotly_dark", height=330, margin=dict(l=0,r=0,t=40,b=0), legend_title="")
+    st.plotly_chart(fig, width="stretch")
+
+st.subheader("Signup cohort retention")
+cohort = con.execute("""
+SELECT cohort_month, month_number, retention_rate
+FROM cohort_retention
+WHERE month_number BETWEEN 0 AND 12
+ORDER BY cohort_month, month_number
+""").df()
+if not cohort.empty:
+    cohort_pivot = cohort.pivot(index="cohort_month", columns="month_number", values="retention_rate")
+    cohort_pivot.columns = [f"M{int(x)}" for x in cohort_pivot.columns]
+    fig = go.Figure(go.Heatmap(z=cohort_pivot.values, x=cohort_pivot.columns,
+                               y=[str(x)[:7] for x in cohort_pivot.index],
+                               colorscale=[[0, "#172033"], [.5, "#2563eb"], [1, "#34d399"]],
+                               text=cohort_pivot.round(1).astype(str).values,
+                               texttemplate="%{text}%", colorbar_title="Retention %"))
+    fig.update_layout(template="plotly_dark", height=420, margin=dict(l=0,r=0,t=10,b=0),
+                      xaxis_title="Months since signup", yaxis_title="Signup cohort")
     st.plotly_chart(fig, width="stretch")
 with right:
     adoption = query(scope + """
