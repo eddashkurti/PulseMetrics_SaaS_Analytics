@@ -23,3 +23,5 @@ The report uses these views as its analytical source layer, relates organization
 - Drill-through: organization-level revenue, usage, subscription, and health context.
 
 To refresh the model, rebuild the local DuckDB database from the Parquet inputs, confirm the quality checks pass, and refresh the Power BI source queries. The `.pbix` file is versioned for portfolio review; it is not a substitute for the reproducible SQL and Python model.
+
+Power BI Desktop is required to open, refresh, or edit the `.pbix`. GitHub Actions cannot execute Power BI Desktop, so automated validation covers the shared Parquet/SQL/Python source layer and the metric validation report; visual refresh remains a documented desktop step.

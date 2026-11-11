@@ -2,6 +2,18 @@
 
 An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, customer segmentation, and product usage. Source data is stored as Parquet, the analytical layer uses DuckDB SQL, and the implemented interactive dashboard uses Streamlit. The curated SQL views are also structured for a Power BI semantic model.
 
+## Portfolio highlights
+
+- `$30.1M` recognized revenue across the source invoice history.
+- `2,010` currently active accounts and `27,032` subscribed seats in the executive model.
+- Cohort retention connects signup quality to long-term customer value.
+- Explainable customer-health scoring prioritizes accounts using recency, users, product events, and MRR.
+- The organization drill-down turns portfolio signals into account-level renewal actions.
+
+The main business takeaway is to pair revenue concentration with product engagement: high-value accounts with weak recent activity should receive proactive Customer Success attention before renewal risk becomes visible in churn totals.
+
+Watch the [dashboard walkthrough](reports/pulsemetrics-dashboard-walkthrough.gif) for a quick visual tour of the executive scorecard, retention view, and customer-health drill-down.
+
 ## Dashboard preview
 
 ### Executive scorecard
@@ -29,6 +41,7 @@ An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, c
 - `docs/entity_relationships.md` — curated model grains and relationships.
 - `docs/powerbi_measures.md` — Power BI measure specification.
 - `docs/data_quality_issue_log.md` — transparent issue register and remediation plan.
+- `reports/metric_validation_report.md` — generated metric reconciliation summary.
 - `reports/portfolio_case_study.md` — portfolio narrative, insights, decisions, and limitations.
 - `reports/` — portfolio evidence and dashboard handoff.
 - `powerbi/` — Power BI model guidance; the committed `pulsemetrics.pbix` is the report deliverable.
@@ -68,6 +81,8 @@ py -3.13 -m streamlit run dashboard/app.py
 The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue. The `sql/03_analytics_model.sql` and `sql/04_retention_analysis.sql` views provide the clean source layer for the committed `pulsemetrics.pbix` Power BI report.
 
 See the full portfolio narrative in [`reports/portfolio_case_study.md`](reports/portfolio_case_study.md).
+
+The committed Power BI file is a presentation artifact. Power BI Desktop does not run in GitHub Actions, so refreshability is validated through the Parquet inputs, DuckDB SQL model, Python checks, and generated metric report rather than by executing the binary `.pbix` in CI.
 
 GitHub Actions runs Python compilation, the data-quality suite, and analytical-model regression tests on every push and pull request.
 

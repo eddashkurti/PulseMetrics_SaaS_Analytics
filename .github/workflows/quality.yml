@@ -20,3 +20,8 @@ jobs:
         run: python scripts/run_quality_checks.py
       - name: Run model regression tests
         run: python tests/test_model.py
+      - name: Generate metric validation report
+        run: python scripts/generate_validation_report.py
+      - name: Verify generated report is non-empty
+        shell: bash
+        run: test -s reports/metric_validation_report.md

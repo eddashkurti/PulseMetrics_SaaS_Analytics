@@ -135,12 +135,29 @@ with left:
     st.plotly_chart(fig, width="stretch")
 
 st.subheader("Signup cohort retention")
-cohort = con.execute("""
-SELECT cohort_month, month_number, retention_rate
-FROM cohort_retention
-WHERE month_number BETWEEN 0 AND 12
-ORDER BY cohort_month, month_number
-""").df()
+cohort = query(scope + """
+, cohort_sizes AS (
+    SELECT date_trunc('month', o.signed_up_on)::DATE AS cohort_month,
+           COUNT(DISTINCT o.organization_id) AS cohort_accounts
+    FROM organizations o
+    WHERE o.organization_id IN (SELECT organization_id FROM scoped_orgs)
+    GROUP BY 1
+), active_months AS (
+    SELECT DISTINCT m.organization_id, date_trunc('month', o.signed_up_on)::DATE AS cohort_month,
+           date_diff('month', date_trunc('month', o.signed_up_on), m.month) AS month_number
+    FROM fct_monthly_account_metrics m
+    JOIN organizations o USING (organization_id)
+    WHERE m.mrr > 0 AND m.month BETWEEN date_trunc('month', ?) AND date_trunc('month', ?)
+      AND m.organization_id IN (SELECT organization_id FROM scoped_orgs)
+), retained AS (
+    SELECT cohort_month, month_number, COUNT(*) AS retained_accounts
+    FROM active_months WHERE month_number BETWEEN 0 AND 12 GROUP BY 1, 2
+)
+SELECT r.cohort_month, r.month_number,
+       ROUND(100.0 * r.retained_accounts / NULLIF(s.cohort_accounts, 0), 1) AS retention_rate
+FROM retained r JOIN cohort_sizes s USING (cohort_month)
+ORDER BY 1, 2
+""", [*selected_industries, *selected_tiers, start, end])
 if not cohort.empty:
     cohort_pivot = cohort.pivot(index="cohort_month", columns="month_number", values="retention_rate")
     cohort_pivot.columns = [f"M{int(x)}" for x in cohort_pivot.columns]
@@ -168,7 +185,7 @@ portfolio = query(scope + """
 , invoice_agg AS (
   SELECT s.organization_id, SUM(i.amount) AS revenue
   FROM invoices i JOIN subscriptions s USING(subscription_id)
-  WHERE i.status IN ('paid','active') GROUP BY 1
+  WHERE i.period_end BETWEEN ? AND ? AND i.status IN ('paid','active') GROUP BY 1
 ), subscription_agg AS (
   SELECT organization_id, SUM(seats) AS seats, MAX(plan_id) AS plan_id
   FROM subscriptions WHERE ended_on IS NULL GROUP BY 1
@@ -187,19 +204,18 @@ LEFT JOIN plans p ON p.plan_id=sa.plan_id
 LEFT JOIN invoice_agg ia USING(organization_id)
 LEFT JOIN usage_agg ua USING(organization_id)
 ORDER BY revenue DESC
-""", [*selected_industries, *selected_tiers])
+""", [*selected_industries, *selected_tiers, start, end])
 st.dataframe(portfolio, width="stretch", hide_index=True, column_config={"revenue": st.column_config.NumberColumn(format="$%d")})
 
 st.subheader("Customer health queue")
-health_industry_sql = "" if not selected_industries else " AND industry IN (" + ",".join("?" for _ in selected_industries) + ")"
-health = query("""
+st.caption("Health scores are as-of the latest available source month; industry, plan-tier, and portfolio filters still scope the account queue.")
+health = query(scope + """
 SELECT organization_id, org_name AS account, industry, health_score,
        health_segment, mrr, active_users, product_events, last_activity
 FROM customer_health
-WHERE 1=1
-""" + health_industry_sql + """
+WHERE organization_id IN (SELECT organization_id FROM scoped_orgs)
 ORDER BY health_score ASC, mrr DESC
-""", selected_industries)
+""", [*selected_industries, *selected_tiers])
 health_left, health_right = st.columns([1, 2])
 with health_left:
     health_mix = health.groupby("health_segment", as_index=False).size().rename(columns={"size": "accounts"})
