@@ -177,6 +177,7 @@ portfolio = query(scope + """
   FROM usage_events GROUP BY 1
 )
 SELECT o.org_name AS account, o.industry, o.country, o.employee_band,
+       o.organization_id,
        COALESCE(p.tier,'No plan') AS tier, COALESCE(ia.revenue,0) AS revenue,
        COALESCE(sa.seats,0) AS seats, COALESCE(ua.product_events,0) AS product_events,
        ua.last_activity
@@ -211,3 +212,59 @@ with health_right:
     st.dataframe(health.head(25), width="stretch", hide_index=True,
                  column_config={"health_score": st.column_config.ProgressColumn("Health score", min_value=0, max_value=100),
                                 "mrr": st.column_config.NumberColumn(format="$%d")})
+
+st.subheader("Organization drill-down")
+account_options = portfolio[["account", "organization_id"]].drop_duplicates().sort_values("account")
+selected_account = st.selectbox("Select an organization", account_options.account.tolist())
+selected_org = int(account_options.loc[account_options.account == selected_account, "organization_id"].iloc[0])
+
+detail = con.execute("""
+SELECT organization_id, org_name, industry, country, employee_band, acquisition_channel,
+       health_score, health_segment, mrr, active_users, product_events, last_activity
+FROM customer_health WHERE organization_id = ?
+""", [selected_org]).df()
+detail_row = detail.iloc[0] if not detail.empty else None
+if detail_row is not None:
+    detail_cols = st.columns(6)
+    detail_cols[0].metric("Health score", f"{int(detail_row.health_score)}/100")
+    detail_cols[1].metric("Segment", detail_row.health_segment)
+    detail_cols[2].metric("Current MRR", f"${float(detail_row.mrr):,.0f}")
+    detail_cols[3].metric("Active users", f"{int(detail_row.active_users):,}")
+    detail_cols[4].metric("Product events", f"{int(detail_row.product_events):,}")
+    detail_cols[5].metric("Last activity", str(detail_row.last_activity))
+
+    detail_left, detail_right = st.columns(2)
+    account_history = con.execute("""
+    SELECT month, mrr, billed_revenue, active_users, product_events, seats, last_activity
+    FROM fct_monthly_account_metrics
+    WHERE organization_id = ? ORDER BY month
+    """, [selected_org]).df()
+    with detail_left:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=account_history.month, y=account_history.mrr,
+                                 name="Contracted MRR", mode="lines+markers", line=dict(color="#60a5fa", width=3)))
+        fig.add_trace(go.Bar(x=account_history.month, y=account_history.billed_revenue,
+                             name="Billed revenue", marker_color="#a78bfa", opacity=.55))
+        fig.update_layout(template="plotly_dark", title="Account revenue history", height=330,
+                          margin=dict(l=0,r=0,t=40,b=0), legend=dict(orientation="h"))
+        st.plotly_chart(fig, width="stretch")
+    with detail_right:
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=account_history.month, y=account_history.active_users,
+                                 name="Active users", mode="lines+markers", line=dict(color="#34d399", width=3)))
+        fig.add_trace(go.Bar(x=account_history.month, y=account_history.product_events,
+                             name="Product events", marker_color="#fbbf24", opacity=.55))
+        fig.update_layout(template="plotly_dark", title="Account product engagement", height=330,
+                          margin=dict(l=0,r=0,t=40,b=0), legend=dict(orientation="h"))
+        st.plotly_chart(fig, width="stretch")
+
+    subscription_history = con.execute("""
+    SELECT s.subscription_id, p.plan_name, p.tier, s.started_on, s.ended_on,
+           s.seats, p.monthly_price + p.seat_price * s.seats AS contracted_mrr,
+           COALESCE(s.cancel_reason, 'Active') AS status
+    FROM subscriptions s JOIN plans p USING (plan_id)
+    WHERE s.organization_id = ? ORDER BY s.started_on DESC
+    """, [selected_org]).df()
+    st.caption(f"{detail_row.org_name} · {detail_row.industry} · {detail_row.country} · {detail_row.employee_band}")
+    st.dataframe(subscription_history, width="stretch", hide_index=True,
+                 column_config={"contracted_mrr": st.column_config.NumberColumn(format="$%d")})
