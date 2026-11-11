@@ -2,6 +2,20 @@
 
 An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, customer segmentation, and product usage. Source data is stored as Parquet, the analytical layer uses DuckDB SQL, and the implemented interactive dashboard uses Streamlit. The curated SQL views are also structured for a Power BI semantic model.
 
+## Dashboard preview
+
+### Executive scorecard
+
+![PulseMetrics executive scorecard](assets/screenshots/executive-scorecard.png)
+
+### Retention and account portfolio
+
+![PulseMetrics cohort retention and account portfolio](assets/screenshots/cohort-retention.png)
+
+### Customer health and organization drill-down
+
+![PulseMetrics customer health queue and organization drill-down](assets/screenshots/customer-health-drilldown.png)
+
 ## Repository layout
 
 - `data/` — source Parquet files.
@@ -53,7 +67,7 @@ py -3.13 -m streamlit run dashboard/app.py
 
 The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue. The `sql/03_analytics_model.sql` and `sql/04_retention_analysis.sql` views provide the clean source layer for the committed `pulsemetrics.pbix` Power BI report.
 
-See the rendered dashboard evidence in [`reports/README.md`](reports/README.md) and the full narrative in [`reports/portfolio_case_study.md`](reports/portfolio_case_study.md).
+See the full portfolio narrative in [`reports/portfolio_case_study.md`](reports/portfolio_case_study.md).
 
 GitHub Actions runs Python compilation, the data-quality suite, and analytical-model regression tests on every push and pull request.
 
