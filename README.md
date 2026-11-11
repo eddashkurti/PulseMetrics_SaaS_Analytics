@@ -1,6 +1,6 @@
 # PulseMetrics SaaS Analytics
 
-An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, customer segmentation, and product usage. Source data is stored as Parquet and the analysis layer uses DuckDB SQL, so it runs locally without a server.
+An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, customer segmentation, and product usage. Source data is stored as Parquet, the analytical layer uses DuckDB SQL, and the implemented interactive dashboard uses Streamlit. The curated SQL views are also structured for a Power BI semantic model.
 
 ## Repository layout
 
@@ -12,7 +12,8 @@ An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, c
 - `sql/04_retention_analysis.sql` — cohort retention and segment-retention views.
 - `dashboard/app.py` — interactive Streamlit dashboard.
 - `docs/metric_definitions.md` — metric definitions and analytical assumptions.
-- `reports/` and `powerbi/` — reserved for report and dashboard artifacts.
+- `reports/` — reserved for exported analysis and dashboard documentation.
+- `powerbi/` — Power BI model guidance and future `.pbix`/`.pbit` artifacts.
 
 ## Quick start
 
@@ -39,7 +40,7 @@ py -3.13 -m pip install -r requirements.txt
 py -3.13 -m streamlit run dashboard/app.py
 ```
 
-The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue.
+The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue. The `sql/03_analytics_model.sql` and `sql/04_retention_analysis.sql` views provide the clean source layer for Power BI if a `.pbix` report is added later.
 
 ## Data quality
 
