@@ -142,7 +142,7 @@ with right:
 
 st.subheader("Account portfolio")
 portfolio = query(scope + """
-WITH invoice_agg AS (
+, invoice_agg AS (
   SELECT s.organization_id, SUM(i.amount) AS revenue
   FROM invoices i JOIN subscriptions s USING(subscription_id)
   WHERE i.status IN ('paid','active') GROUP BY 1
