@@ -1,6 +1,6 @@
 # Power BI handoff
 
-The repository currently ships the interactive dashboard as Streamlit; no Power BI Desktop file is committed yet. The curated DuckDB views are designed to be consumed by Power BI:
+The repository ships the interactive dashboard as Streamlit and the completed Power BI report as `pulsemetrics.pbix`. The curated DuckDB views are designed to be consumed by Power BI:
 
 - `dim_organizations`
 - `dim_plans`
@@ -11,4 +11,4 @@ The repository currently ships the interactive dashboard as Streamlit; no Power 
 - `cohort_retention`
 - `segment_retention`
 
-For a Power BI implementation, load these views as the semantic layer, relate organizations and plans through their keys, and use the definitions in `docs/metric_definitions.md` as the measure specification. The Streamlit dashboard remains the runnable local experience until a `.pbix` or `.pbit` artifact is created.
+The report uses these views as its analytical source layer, relates organizations and plans through their keys, and follows the definitions in `docs/metric_definitions.md` as the measure specification. The Streamlit dashboard remains the reproducible local experience, while `pulsemetrics.pbix` is the Power BI presentation deliverable.

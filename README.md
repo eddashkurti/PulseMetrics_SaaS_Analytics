@@ -15,7 +15,7 @@ An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, c
 - `docs/entity_relationships.md` — curated model grains and relationships.
 - `docs/powerbi_measures.md` — Power BI measure specification.
 - `reports/` — reserved for exported analysis and dashboard documentation.
-- `powerbi/` — Power BI model guidance and future `.pbix`/`.pbit` artifacts.
+- `powerbi/` — Power BI model guidance; the committed `pulsemetrics.pbix` is the report deliverable.
 
 ## Quick start
 
@@ -49,7 +49,7 @@ py -3.13 -m pip install -r requirements.txt
 py -3.13 -m streamlit run dashboard/app.py
 ```
 
-The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue. The `sql/03_analytics_model.sql` and `sql/04_retention_analysis.sql` views provide the clean source layer for Power BI if a `.pbix` report is added later.
+The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue. The `sql/03_analytics_model.sql` and `sql/04_retention_analysis.sql` views provide the clean source layer for the committed `pulsemetrics.pbix` Power BI report.
 
 GitHub Actions runs Python compilation and the data-quality suite on every push and pull request.
 
@@ -61,4 +61,4 @@ Run the data-quality script before using the metrics. It checks duplicate IDs, r
 
 ## Reproducibility
 
-No generated database, WAL file, notebook checkpoint, or raw staging files are committed. Rebuild the local database from the versioned Parquet inputs and SQL scripts whenever needed.
+The committed `pulsemetrics.pbix` is the versioned presentation deliverable. The local DuckDB database, WAL file, notebook checkpoints, and raw staging files are generated or transient artifacts and are not committed. Rebuild the local database from the versioned Parquet inputs and SQL scripts whenever needed.
