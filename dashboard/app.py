@@ -24,6 +24,8 @@ def get_connection():
     for table in ["plans", "organizations", "users", "subscriptions", "invoices", "usage_events"]:
         path = (ROOT / "data" / f"{table}.parquet").as_posix()
         con.execute(f"CREATE OR REPLACE VIEW {table} AS SELECT * FROM read_parquet('{path}')")
+    model_path = ROOT / "sql" / "03_analytics_model.sql"
+    con.execute(model_path.read_text())
     return con
 
 con = get_connection()
@@ -165,3 +167,26 @@ LEFT JOIN usage_agg ua USING(organization_id)
 ORDER BY revenue DESC
 """, [*selected_industries, *selected_tiers])
 st.dataframe(portfolio, width="stretch", hide_index=True, column_config={"revenue": st.column_config.NumberColumn(format="$%d")})
+
+st.subheader("Customer health queue")
+health_industry_sql = "" if not selected_industries else " AND industry IN (" + ",".join("?" for _ in selected_industries) + ")"
+health = query("""
+SELECT organization_id, org_name AS account, industry, health_score,
+       health_segment, mrr, active_users, product_events, last_activity
+FROM customer_health
+WHERE 1=1
+""" + health_industry_sql + """
+ORDER BY health_score ASC, mrr DESC
+""", selected_industries)
+health_left, health_right = st.columns([1, 2])
+with health_left:
+    health_mix = health.groupby("health_segment", as_index=False).size().rename(columns={"size": "accounts"})
+    fig = px.pie(health_mix, names="health_segment", values="accounts", hole=.65,
+                 color="health_segment", color_discrete_map={"Healthy":"#34d399", "Monitor":"#fbbf24", "At risk":"#f87171"})
+    fig.update_layout(template="plotly_dark", height=300, margin=dict(l=0,r=0,t=10,b=0))
+    st.plotly_chart(fig, width="stretch")
+with health_right:
+    st.caption("Health score is explainable: recency, active users, product events, and current MRR.")
+    st.dataframe(health.head(25), width="stretch", hide_index=True,
+                 column_config={"health_score": st.column_config.ProgressColumn("Health score", min_value=0, max_value=100),
+                                "mrr": st.column_config.NumberColumn(format="$%d")})
