@@ -32,7 +32,7 @@ WITH cohort AS (
     FROM customer_cohorts c JOIN fct_monthly_account_metrics m USING (organization_id)
     WHERE m.mrr > 0 GROUP BY 1, 2, 3
 )
-SELECT industry, acquisition_channel, COUNT(*) AS active_accounts,
+SELECT cohort.industry, cohort.acquisition_channel, COUNT(*) AS active_accounts,
        ROUND(AVG(date_diff('month', date_trunc('month', o.signed_up_on), last_active_month)), 1) AS avg_active_months
 FROM cohort JOIN organizations o USING (organization_id)
 GROUP BY 1, 2 ORDER BY active_accounts DESC;
