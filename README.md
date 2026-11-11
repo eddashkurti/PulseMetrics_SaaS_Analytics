@@ -8,6 +8,10 @@ An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, c
 - `sql/00_load_data.sql` — loads Parquet into DuckDB tables.
 - `sql/01_data_quality.sql` — uniqueness, null, referential-integrity, and range checks.
 - `sql/02_metrics.sql` — reusable revenue, activity, churn, and KPI views.
+- `sql/03_analytics_model.sql` — curated subscription-month, account-metric, revenue-bridge, and customer-health model.
+- `sql/04_retention_analysis.sql` — cohort retention and segment-retention views.
+- `dashboard/app.py` — interactive Streamlit dashboard.
+- `docs/metric_definitions.md` — metric definitions and analytical assumptions.
 - `reports/` and `powerbi/` — reserved for report and dashboard artifacts.
 
 ## Quick start
@@ -18,6 +22,8 @@ Install [DuckDB](https://duckdb.org/docs/installation/) and run from the reposit
 duckdb pulsemetrics.duckdb -c ".read sql/00_load_data.sql"
 duckdb pulsemetrics.duckdb -c ".read sql/01_data_quality.sql"
 duckdb pulsemetrics.duckdb -c ".read sql/02_metrics.sql"
+duckdb pulsemetrics.duckdb -c ".read sql/03_analytics_model.sql"
+duckdb pulsemetrics.duckdb -c ".read sql/04_retention_analysis.sql"
 ```
 
 The SQL uses repository-relative paths and works after cloning on Windows, macOS, or Linux. The generated `pulsemetrics.duckdb` database and WAL files are ignored by Git.
@@ -25,6 +31,15 @@ The SQL uses repository-relative paths and works after cloning on Windows, macOS
 ## Metrics
 
 `sql/02_metrics.sql` creates `monthly_revenue`, `organization_revenue`, `monthly_active_organizations`, and `churn_summary` views, followed by a compact KPI query for dashboard cards or CSV export.
+
+Launch the interactive dashboard with:
+
+```text
+py -3.13 -m pip install -r requirements.txt
+py -3.13 -m streamlit run dashboard/app.py
+```
+
+The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue.
 
 ## Data quality
 
