@@ -2,6 +2,8 @@
 
 An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, customer segmentation, and product usage. Source data is stored as Parquet, the analytical layer uses DuckDB SQL, and the implemented interactive dashboard uses Streamlit. The curated SQL views are also structured for a Power BI semantic model.
 
+**Live dashboard:** [Open PulseMetrics on Streamlit](https://eddashkurti-pulsemetrics-saas-analytics-dashboardapp-gxmb71.streamlit.app/)
+
 ## Portfolio highlights
 
 - `$30.1M` recognized revenue across the source invoice history.
