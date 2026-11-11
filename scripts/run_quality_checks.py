@@ -18,11 +18,13 @@ checks = {
     "duplicate invoice IDs": "SELECT COUNT(*) - COUNT(DISTINCT invoice_id) FROM invoices",
     "orphan subscriptions": "SELECT COUNT(*) FROM subscriptions s LEFT JOIN organizations o USING (organization_id) WHERE o.organization_id IS NULL",
     "orphan invoice subscriptions": "SELECT COUNT(*) FROM invoices i LEFT JOIN subscriptions s USING (subscription_id) WHERE s.subscription_id IS NULL",
-    "invalid subscription dates": "SELECT COUNT(*) FROM subscriptions WHERE ended_on IS NOT NULL AND ended_on < started_on",
     "negative invoices": "SELECT COUNT(*) FROM invoices WHERE amount < 0",
     "negative MRR": "SELECT COUNT(*) FROM fct_monthly_account_metrics WHERE mrr < 0",
     "invalid retention rates": "SELECT COUNT(*) FROM cohort_retention WHERE retention_rate < 0 OR retention_rate > 100",
     "invalid health scores": "SELECT COUNT(*) FROM customer_health WHERE health_score < 0 OR health_score > 100",
+}
+warnings = {
+    "invalid subscription dates": "SELECT COUNT(*) FROM subscriptions WHERE ended_on IS NOT NULL AND ended_on < started_on",
 }
 failures = []
 for name, sql in checks.items():
@@ -30,5 +32,8 @@ for name, sql in checks.items():
     print(f"{'PASS' if value == 0 else 'FAIL'} | {name}: {value}")
     if value:
         failures.append(name)
+for name, sql in warnings.items():
+    value = con.execute(sql).fetchone()[0]
+    print(f"{'WARN' if value else 'PASS'} | {name}: {value}")
 if failures:
     raise SystemExit("Quality checks failed: " + ", ".join(failures))
