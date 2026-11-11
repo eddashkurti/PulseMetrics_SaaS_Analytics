@@ -27,6 +27,13 @@ duckdb pulsemetrics.duckdb -c ".read sql/03_analytics_model.sql"
 duckdb pulsemetrics.duckdb -c ".read sql/04_retention_analysis.sql"
 ```
 
+Or rebuild and validate the complete model with Python:
+
+```text
+py -3.13 scripts/build_model.py
+py -3.13 scripts/run_quality_checks.py
+```
+
 The SQL uses repository-relative paths and works after cloning on Windows, macOS, or Linux. The generated `pulsemetrics.duckdb` database and WAL files are ignored by Git.
 
 ## Metrics
@@ -41,6 +48,8 @@ py -3.13 -m streamlit run dashboard/app.py
 ```
 
 The dashboard includes executive KPIs, revenue mix, churn reasons, product adoption, cohort retention, account portfolio analysis, and an explainable customer-health queue. The `sql/03_analytics_model.sql` and `sql/04_retention_analysis.sql` views provide the clean source layer for Power BI if a `.pbix` report is added later.
+
+GitHub Actions runs Python compilation and the data-quality suite on every push and pull request.
 
 ## Data quality
 

@@ -12,11 +12,18 @@ SELECT plan_id, plan_name, tier, monthly_price, seat_price,
 FROM plans;
 
 CREATE OR REPLACE VIEW fct_subscription_months AS
-WITH calendar AS (
+WITH as_of AS (
+    SELECT date_trunc('month', GREATEST(
+        (SELECT MAX(period_end) FROM invoices),
+        (SELECT MAX(occurred_at)::DATE FROM usage_events),
+        (SELECT MAX(started_on) FROM subscriptions),
+        (SELECT MAX(ended_on) FROM subscriptions)
+    ))::DATE AS as_of_month
+), calendar AS (
     SELECT month::DATE AS month
     FROM generate_series(
         date_trunc('month', (SELECT MIN(started_on) FROM subscriptions)),
-        date_trunc('month', (SELECT MAX(COALESCE(ended_on, CURRENT_DATE)) FROM subscriptions)),
+        (SELECT as_of_month FROM as_of),
         INTERVAL '1 month'
     ) AS x(month)
 )
@@ -67,16 +74,18 @@ CREATE OR REPLACE VIEW customer_health AS
 WITH latest AS (
     SELECT organization_id, MAX(month) AS latest_month
     FROM fct_monthly_account_metrics GROUP BY 1
+), as_of AS (
+    SELECT MAX(month) AS as_of_month FROM fct_monthly_account_metrics
 ), scored AS (
     SELECT o.organization_id, o.org_name, o.industry, o.country, o.employee_band,
            o.acquisition_channel, m.mrr, m.seats, m.active_users, m.product_events,
            m.last_activity, COALESCE(m.billed_revenue, 0) AS billed_revenue,
-           CASE WHEN m.last_activity >= CURRENT_DATE - INTERVAL '30 days' THEN 30
-                WHEN m.last_activity >= CURRENT_DATE - INTERVAL '60 days' THEN 15 ELSE 0 END
+           CASE WHEN m.last_activity >= a.as_of_month - INTERVAL '30 days' THEN 30
+                WHEN m.last_activity >= a.as_of_month - INTERVAL '60 days' THEN 15 ELSE 0 END
            + CASE WHEN m.active_users >= 5 THEN 25 WHEN m.active_users >= 2 THEN 15 ELSE 5 END
            + CASE WHEN m.product_events >= 20 THEN 25 WHEN m.product_events >= 5 THEN 15 ELSE 5 END
            + CASE WHEN m.mrr > 0 THEN 20 ELSE 0 END AS health_score
-    FROM dim_organizations o JOIN latest l USING (organization_id)
+    FROM dim_organizations o JOIN latest l USING (organization_id) CROSS JOIN as_of a
     JOIN fct_monthly_account_metrics m
       ON m.organization_id = l.organization_id AND m.month = l.latest_month
 )
