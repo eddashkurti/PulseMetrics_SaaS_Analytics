@@ -1,5 +1,6 @@
 """PulseMetrics executive and revenue-operations dashboard."""
 from pathlib import Path
+from threading import Lock
 import duckdb
 import pandas as pd
 import plotly.express as px
@@ -7,6 +8,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
+DB_LOCK = Lock()
 st.set_page_config(page_title="PulseMetrics | SaaS Intelligence", page_icon="◈", layout="wide")
 
 st.markdown("""
@@ -21,25 +23,28 @@ h1 { letter-spacing:-.04em; }
 @st.cache_resource
 def get_connection():
     con = duckdb.connect()
-    for table in ["plans", "organizations", "users", "subscriptions", "invoices", "usage_events"]:
-        path = (ROOT / "data" / f"{table}.parquet").as_posix()
-        con.execute(f"CREATE OR REPLACE VIEW {table} AS SELECT * FROM read_parquet('{path}')")
-    model_path = ROOT / "sql" / "03_analytics_model.sql"
-    con.execute(model_path.read_text())
-    retention_path = ROOT / "sql" / "04_retention_analysis.sql"
-    con.execute(retention_path.read_text())
+    with DB_LOCK:
+        for table in ["plans", "organizations", "users", "subscriptions", "invoices", "usage_events"]:
+            path = (ROOT / "data" / f"{table}.parquet").as_posix()
+            con.execute(f"CREATE OR REPLACE VIEW {table} AS SELECT * FROM read_parquet('{path}')")
+        model_path = ROOT / "sql" / "03_analytics_model.sql"
+        con.execute(model_path.read_text())
+        retention_path = ROOT / "sql" / "04_retention_analysis.sql"
+        con.execute(retention_path.read_text())
     return con
 
 con = get_connection()
 
 @st.cache_data
 def bounds():
-    return con.execute("SELECT min(period_start), max(period_end) FROM invoices").fetchone()
+    with DB_LOCK:
+        return con.execute("SELECT min(period_start), max(period_end) FROM invoices").fetchone()
 
 @st.cache_data
 def options():
-    industries = con.execute("SELECT DISTINCT industry FROM organizations ORDER BY 1").df()["industry"].tolist()
-    tiers = con.execute("SELECT DISTINCT tier FROM plans ORDER BY 1").df()["tier"].tolist()
+    with DB_LOCK:
+        industries = con.execute("SELECT DISTINCT industry FROM organizations ORDER BY 1").df()["industry"].tolist()
+        tiers = con.execute("SELECT DISTINCT tier FROM plans ORDER BY 1").df()["tier"].tolist()
     return industries, tiers
 
 min_date, max_date = bounds()
@@ -63,7 +68,8 @@ tier_sql = "" if not selected_tiers else " AND p.tier IN (" + ",".join("?" for _
 params = [start, end, *selected_industries, *selected_tiers]
 
 def query(sql, values=params):
-    return con.execute(sql, values).df()
+    with DB_LOCK:
+        return con.execute(sql, values).df()
 
 scope = f"""
 WITH scoped_orgs AS (
@@ -234,11 +240,12 @@ account_options = portfolio[["account", "organization_id"]].drop_duplicates().so
 selected_account = st.selectbox("Select an organization", account_options.account.tolist())
 selected_org = int(account_options.loc[account_options.account == selected_account, "organization_id"].iloc[0])
 
-detail = con.execute("""
-SELECT organization_id, org_name, industry, country, employee_band, acquisition_channel,
-       health_score, health_segment, mrr, active_users, product_events, last_activity
-FROM customer_health WHERE organization_id = ?
-""", [selected_org]).df()
+with DB_LOCK:
+    detail = con.execute("""
+    SELECT organization_id, org_name, industry, country, employee_band, acquisition_channel,
+           health_score, health_segment, mrr, active_users, product_events, last_activity
+    FROM customer_health WHERE organization_id = ?
+    """, [selected_org]).df()
 detail_row = detail.iloc[0] if not detail.empty else None
 if detail_row is not None:
     detail_cols = st.columns(6)
@@ -250,11 +257,12 @@ if detail_row is not None:
     detail_cols[5].metric("Last activity", str(detail_row.last_activity))
 
     detail_left, detail_right = st.columns(2)
-    account_history = con.execute("""
-    SELECT month, mrr, billed_revenue, active_users, product_events, seats, last_activity
-    FROM fct_monthly_account_metrics
-    WHERE organization_id = ? ORDER BY month
-    """, [selected_org]).df()
+    with DB_LOCK:
+        account_history = con.execute("""
+        SELECT month, mrr, billed_revenue, active_users, product_events, seats, last_activity
+        FROM fct_monthly_account_metrics
+        WHERE organization_id = ? ORDER BY month
+        """, [selected_org]).df()
     with detail_left:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=account_history.month, y=account_history.mrr,
@@ -274,13 +282,14 @@ if detail_row is not None:
                           margin=dict(l=0,r=0,t=40,b=0), legend=dict(orientation="h"))
         st.plotly_chart(fig, width="stretch")
 
-    subscription_history = con.execute("""
-    SELECT s.subscription_id, p.plan_name, p.tier, s.started_on, s.ended_on,
-           s.seats, p.monthly_price + p.seat_price * s.seats AS contracted_mrr,
-           COALESCE(s.cancel_reason, 'Active') AS status
-    FROM subscriptions s JOIN plans p USING (plan_id)
-    WHERE s.organization_id = ? ORDER BY s.started_on DESC
-    """, [selected_org]).df()
+    with DB_LOCK:
+        subscription_history = con.execute("""
+        SELECT s.subscription_id, p.plan_name, p.tier, s.started_on, s.ended_on,
+               s.seats, p.monthly_price + p.seat_price * s.seats AS contracted_mrr,
+               COALESCE(s.cancel_reason, 'Active') AS status
+        FROM subscriptions s JOIN plans p USING (plan_id)
+        WHERE s.organization_id = ? ORDER BY s.started_on DESC
+        """, [selected_org]).df()
     st.caption(f"{detail_row.org_name} · {detail_row.industry} · {detail_row.country} · {detail_row.employee_band}")
     st.dataframe(subscription_history, width="stretch", hide_index=True,
                  column_config={"contracted_mrr": st.column_config.NumberColumn(format="$%d")})
