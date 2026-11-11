@@ -12,8 +12,6 @@ An end-to-end B2B SaaS analytics project for revenue growth, churn, retention, c
 
 The main business takeaway is to pair revenue concentration with product engagement: high-value accounts with weak recent activity should receive proactive Customer Success attention before renewal risk becomes visible in churn totals.
 
-Watch the [dashboard walkthrough](reports/pulsemetrics-dashboard-walkthrough.gif) for a quick visual tour of the executive scorecard, retention view, and customer-health drill-down.
-
 ## Dashboard preview
 
 ### Executive scorecard
